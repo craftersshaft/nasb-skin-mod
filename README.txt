@@ -1,0 +1,1 @@
+this was supposed to be a skin loader mod for nickelodeon all star brawl, with insurance that if a skin failed to load it would go back to the default skin. i give up. someone else is already doing it better and it's 9:40 pm and i spent my entire day on this Enjoy
