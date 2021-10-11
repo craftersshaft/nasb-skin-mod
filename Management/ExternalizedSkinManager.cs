@@ -5,6 +5,7 @@ using System.IO;
 using System.Text;
 using HarmonyLib;
 using Nick;
+using NickSkins.Utils;
 using UnityEngine.Networking;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,16 +13,18 @@ using BepInEx;
 using UnityEngine.SceneManagement;
 using UnityEngine;
 using SweetVictoryToo;
+using System.Reflection;
 
 namespace NickSkins.Management
 {
+
 	public class ExternalizedSkinManager
 	{
 		public static string rootCustomSkinsPath;
 		public List<CharacterMetaData> charactersingeneral;
-		public Scene newScene;
 		public Dictionary<string, LoadedSkin> loadedSkins;
 		public static ExternalizedSkinManager Instance;
+		public Scene[] sceneList;
 
 		public ExternalizedSkinManager MeIrl()
         {
@@ -31,6 +34,7 @@ namespace NickSkins.Management
 		{
 			charactersingeneral = new List<CharacterMetaData>();
 			rootCustomSkinsPath = Path.Combine(Paths.BepInExRootPath, "CustomSkins");
+			rootCustomSkinsPath = rootCustomSkinsPath.Replace("\\", "/");
 			Instance = this;
 
 			Task.Run(delegate ()
@@ -75,7 +79,6 @@ namespace NickSkins.Management
 				var newDirectoryName = Path.GetFileName(directory);
 
 				Plugin.LogInfo($"directory {directoryName} parent folder name {parentFolderName} full path {directory}");
-
 				LoadTextureSwapFromFolder(parentFolderName, directoryName);
 			}
 		}
@@ -84,6 +87,7 @@ namespace NickSkins.Management
 		{
 			Plugin.LogInfo("new directory is " + folderName);
 			string path = Path.Combine(rootCustomSkinsPath, parentFolderName, folderName);
+			path = path.Replace("\\", "/");
 			CharacterMetaData toreplace = null;
 
 			CharacterMetaData GetCharacterById(string id)
@@ -113,39 +117,84 @@ namespace NickSkins.Management
 
 
 				SceneManager.LoadScene(toreplace.skins[0].id, LoadSceneMode.Additive);
-				ExternalizedSkinManager.Instance.loadedSkins = (Dictionary<string, LoadedSkin>)AccessTools.Field(typeof(LoadedSkin), "loadedSkins").GetValue(Resources.FindObjectsOfTypeAll(typeof(Nick.LoadedSkin)));
-				SkinData.TextureSwitch[] temtexturedata = (SkinData.TextureSwitch[])AccessTools.Field(typeof(SkinData), "textureSwitches").GetValue(Resources.FindObjectsOfTypeAll(typeof(Nick.SkinData)));
+				SceneManager.sceneLoaded += OnSceneLoaded;
 
-				foreach (string text in from x in Directory.GetFiles(path)
-										where x.ToLower().EndsWith(".png")
-										select x)
+				void OnSceneLoaded(Scene scene, LoadSceneMode mode)
 				{
-
-
-					foreach (Nick.SkinData.TextureSwitch texavery in temtexturedata)
+					if (scene.IsValid() && scene.name != "MenuScene")
 					{
-						for (var ayy = 0; ayy < texavery.textures.Length; ayy++)
+						Plugin.LogInfo("Loaded scene " + scene.name);
+						GameObject newObject = GameObject.Instantiate(scene.GetRootGameObjects()[0]);
+						SceneManager.sceneLoaded -= OnSceneLoaded;
+						Plugin.LogInfo("Loaded loadedSkins on " + newObject.name);
+						//ExternalizedSkinManager.Instance.loadedSkins = (Dictionary<string, LoadedSkin>)AccessTools.Field(typeof(LoadedSkin), "loadedSkins").GetValue(UnityEngine.Object.FindObjectOfType<Nick.LoadedSkin>());
+						//if the bottom command breaks, the top is a backup
+						if (ExternalizedSkinManager.Instance.loadedSkins == null)
 						{
-							string remember = texavery.textures[ayy].name;
-							if (text.ToLower().EndsWith(texavery.textures[ayy].name.ToLower())) {
-								texavery.textures[ayy] = BrainFailProductions.PolyFew.AsImpL.TextureLoader.LoadTextureFromUrl("file:///" + path);
-							}
 
+							ExternalizedSkinManager.Instance.loadedSkins = (Dictionary<string, LoadedSkin>)AccessTools.Field(typeof(LoadedSkin), "loadedSkins").GetValue(newObject.GetComponent<Nick.LoadedSkin>());
 						}
+
+						SkinData.TextureSwitch[] temtexturedata = NickSkins.Utils.GetFielder.GetFieldValue<SkinData.TextureSwitch[]>(newObject.GetComponent<Nick.LoadedSkin>().skin, "textureSwitches");
+
+					SkinData tempskindata = ScriptableObject.CreateInstance<SkinData>();
+					tempskindata.skinid = folderName;
+					SkinData.MeshSwitch[] originalmeshdata = NickSkins.Utils.GetFielder.GetFieldValue<SkinData.MeshSwitch[]>(ExternalizedSkinManager.Instance.loadedSkins[toreplace.skins[0].id].skin, "meshSwitches");
+					SkinData.MeshSwitch[] newmeshdata = NickSkins.Utils.GetFielder.GetFieldValue<SkinData.MeshSwitch[]>(tempskindata, "meshSwitches");
+					SkinData.TextureSwitch[] originaltexturedata = NickSkins.Utils.GetFielder.GetFieldValue<SkinData.TextureSwitch[]>(ExternalizedSkinManager.Instance.loadedSkins[toreplace.skins[0].id].skin, "textureSwitches");
+					SkinData.TextureSwitch[] newtexturedata = NickSkins.Utils.GetFielder.GetFieldValue<SkinData.TextureSwitch[]>(tempskindata, "textureSwitches");
+					newtexturedata = originaltexturedata;
+					newmeshdata = originalmeshdata;
+
+					foreach (string text in from x in Directory.GetFiles(path)
+												where x.ToLower().EndsWith(".png")
+												select x)
+						{
+							
+							Plugin.LogInfo("Found PNG " + text);
+							string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(text);
+
+							foreach (Nick.SkinData.TextureSwitch texavery in newtexturedata)
+							{
+								Plugin.LogInfo("Found Texture " + texavery.id);
+								for (var ayy = 0; ayy < texavery.textures.Length; ayy++)
+								{
+									string remember = texavery.textures[ayy].name;
+									if (fileNameWithoutExtension.ToLower() == remember.ToLower())
+									{
+										Texture2D thisoldtexture = BrainFailProductions.PolyFew.AsImpL.TextureLoader.LoadTextureFromUrl(text.Replace("\\", "/"));
+										var rawData = System.IO.File.ReadAllBytes(text);
+										Texture2D tex = new Texture2D(2, 2); // Create an empty Texture; size doesn't matter (she said)
+										tex.LoadRawTextureData(rawData);
+										texavery.textures[ayy] = thisoldtexture;
+										Plugin.LogInfo("Replaced Texture" + remember);
+									}
+
+								}
+							}
+						}
+
+
+						LoadedSkin skintoload = new LoadedSkin
+                        {
+                            skinId = folderName,
+                            skin = tempskindata
+                        };
+
+                        //skintoload.skin = 
+                        ExternalizedSkinManager.Instance.loadedSkins.Add(folderName, skintoload);
+						ExternalizedSkinManager.Instance.sceneList.AddItem(SceneManager.GetSceneByName(toreplace.skins[0].id));
+						Plugin.LogInfo($"Found custom skin: {parentFolderName}\\{folderName}");
 					}
 
+					else
+					{
+						Plugin.LogInfo("the scene didnt load in time :( ");
 
+					}
 				}
-				SkinData tempskindata = ExternalizedSkinManager.Instance.loadedSkins[parentFolderName].skin;
-				LoadedSkin skintoload = new LoadedSkin();
-				skintoload.skinId = folderName;
-				skintoload.skin = tempskindata;
 
-				//skintoload.skin = 
-				ExternalizedSkinManager.Instance.loadedSkins.Add(folderName, skintoload);
 			}
-			Plugin.LogInfo($"Found custom skin: {parentFolderName}\\{folderName}");
-
 		}
 
 
