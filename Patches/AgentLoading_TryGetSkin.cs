@@ -22,6 +22,7 @@ namespace NickSkins.Patches
 				return true;
 			}
 			else {
+				SweetVictoryToo.Plugin.LogError("apparently the scene " + id + " doesn't exist");
 			id = "skin_apple_default";
 			return 	true;
 			}

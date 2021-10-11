@@ -24,8 +24,7 @@ namespace NickSkins.Management
 		public List<CharacterMetaData> charactersingeneral;
 		public Dictionary<string, LoadedSkin> loadedSkins;
 		public static ExternalizedSkinManager Instance;
-		public Scene[] sceneList;
-
+		public Dictionary<string, Scene> sceneList = new();
 		public ExternalizedSkinManager MeIrl()
         {
 			return this;
@@ -124,7 +123,11 @@ namespace NickSkins.Management
 					if (scene.IsValid() && scene.name != "MenuScene")
 					{
 						Plugin.LogInfo("Loaded scene " + scene.name);
-						GameObject newObject = GameObject.Instantiate(scene.GetRootGameObjects()[0]);
+						GameObject newObject = new GameObject("loadedCustomSkin");
+						Nick.LoadedSkin loadyskin = newObject.AddComponent<Nick.LoadedSkin>() as Nick.LoadedSkin;
+						loadyskin.skinId = folderName;
+						loadyskin.skin = ScriptableObject.CreateInstance<SkinData>();
+						loadyskin.skin.skinid = folderName.Substring(folderName.LastIndexOf("_") + 1);
 						SceneManager.sceneLoaded -= OnSceneLoaded;
 						Plugin.LogInfo("Loaded loadedSkins on " + newObject.name);
 						//ExternalizedSkinManager.Instance.loadedSkins = (Dictionary<string, LoadedSkin>)AccessTools.Field(typeof(LoadedSkin), "loadedSkins").GetValue(UnityEngine.Object.FindObjectOfType<Nick.LoadedSkin>());
@@ -132,25 +135,83 @@ namespace NickSkins.Management
 						if (ExternalizedSkinManager.Instance.loadedSkins == null)
 						{
 
-							ExternalizedSkinManager.Instance.loadedSkins = (Dictionary<string, LoadedSkin>)AccessTools.Field(typeof(LoadedSkin), "loadedSkins").GetValue(newObject.GetComponent<Nick.LoadedSkin>());
+							ExternalizedSkinManager.Instance.loadedSkins = (Dictionary<string, LoadedSkin>)AccessTools.Field(typeof(LoadedSkin), "loadedSkins").GetValue(loadyskin);
 						}
 
-						SkinData.TextureSwitch[] temtexturedata = NickSkins.Utils.GetFielder.GetFieldValue<SkinData.TextureSwitch[]>(newObject.GetComponent<Nick.LoadedSkin>().skin, "textureSwitches");
+					SkinData.TextureSwitch[] temtexturedata = NickSkins.Utils.GetFielder.GetPrivateField<SkinData.TextureSwitch[]>(loadyskin.skin, "textureSwitches");
+						if (temtexturedata == null)
+                        {
+							temtexturedata = new SkinData.TextureSwitch[25];
+                        }
 
 					SkinData tempskindata = ScriptableObject.CreateInstance<SkinData>();
-					tempskindata.skinid = folderName;
-					SkinData.MeshSwitch[] originalmeshdata = NickSkins.Utils.GetFielder.GetFieldValue<SkinData.MeshSwitch[]>(ExternalizedSkinManager.Instance.loadedSkins[toreplace.skins[0].id].skin, "meshSwitches");
-					SkinData.MeshSwitch[] newmeshdata = NickSkins.Utils.GetFielder.GetFieldValue<SkinData.MeshSwitch[]>(tempskindata, "meshSwitches");
-					SkinData.TextureSwitch[] originaltexturedata = NickSkins.Utils.GetFielder.GetFieldValue<SkinData.TextureSwitch[]>(ExternalizedSkinManager.Instance.loadedSkins[toreplace.skins[0].id].skin, "textureSwitches");
-					SkinData.TextureSwitch[] newtexturedata = NickSkins.Utils.GetFielder.GetFieldValue<SkinData.TextureSwitch[]>(tempskindata, "textureSwitches");
-					newtexturedata = originaltexturedata;
-					newmeshdata = originalmeshdata;
+					tempskindata.skinid = folderName.Substring(folderName.LastIndexOf("_")+1);
+					tempskindata.name = folderName;
+					SkinData.MeshSwitch[] originalmeshdata = NickSkins.Utils.GetFielder.GetPrivateField<SkinData.MeshSwitch[]>(ExternalizedSkinManager.Instance.loadedSkins[toreplace.skins[0].id].skin, "meshSwitches");
+					SkinData.MeshSwitch[] newmeshdata = new SkinData.MeshSwitch[originalmeshdata.Length];
+					SkinData.MeshSwitch[] newobjmeshdata = NickSkins.Utils.GetFielder.GetPrivateField<SkinData.MeshSwitch[]>(loadyskin.skin, "meshSwitches");
+						SweetVictoryToo.Plugin.LogInfo("loadedskin skinid is " + loadyskin.skinId);
+					SkinData.TextureSwitch[] originaltexturedata = NickSkins.Utils.GetFielder.GetPrivateField<SkinData.TextureSwitch[]>(ExternalizedSkinManager.Instance.loadedSkins[toreplace.skins[0].id].skin, "textureSwitches");
+					SkinData.TextureSwitch[] newtexturedata = new SkinData.TextureSwitch[originaltexturedata.Length];
+					SkinData.TextureSwitch[] newobjtexturedata = NickSkins.Utils.GetFielder.GetPrivateField<SkinData.TextureSwitch[]>(loadyskin.skin, "textureSwitches");
+					newobjtexturedata = new SkinData.TextureSwitch[originaltexturedata.Length];
 
-					foreach (string text in from x in Directory.GetFiles(path)
+						//Array.Copy(originaltexturedata, newtexturedata, originaltexturedata.Length);
+						//Array.Copy(originalmeshdata, newmeshdata, originalmeshdata.Length);
+						//originalmeshdata.CopyTo(newmeshdata, 0);
+						//originaltexturedata.CopyTo(newtexturedata, 0);
+						//newmeshdata = originalmeshdata.Select(a => (SkinData.MeshSwitch)a.Clone()).ToArray();
+						//newmeshdata = Array.ConvertAll(originalmeshdata, a => (SkinData.MeshSwitch)a.Clone());
+						Texture2D duplicateTexture(Texture2D source)
+						{
+							RenderTexture renderTex = RenderTexture.GetTemporary(
+										source.width,
+										source.height,
+										0,
+										RenderTextureFormat.Default,
+										RenderTextureReadWrite.Linear);
+
+							Graphics.Blit(source, renderTex);
+							RenderTexture previous = RenderTexture.active;
+							RenderTexture.active = renderTex;
+							Texture2D readableText = new Texture2D(source.width, source.height);
+							readableText.ReadPixels(new Rect(0, 0, renderTex.width, renderTex.height), 0, 0);
+							readableText.Apply();
+							RenderTexture.active = previous;
+							RenderTexture.ReleaseTemporary(renderTex);
+							return readableText;
+						}
+						for (var ariba = 0; ariba < originalmeshdata.Length; ariba++)
+						{
+							var newmesh = new SkinData.MeshSwitch();
+							newmesh.id = originalmeshdata[ariba].id;
+							Plugin.LogInfo("Cloning Mesh " + newmesh.id);
+							var submes = new Mesh[originalmeshdata[ariba].meshes.Length];
+							for (var tempgraphy = 0; tempgraphy < originalmeshdata[ariba].meshes.Length; tempgraphy++) { submes[tempgraphy] = originalmeshdata[ariba].meshes[tempgraphy]; }
+							newmesh.meshes = submes;
+							newmeshdata[ariba] = newmesh;
+						}
+						for (var temporary = 0; temporary < originaltexturedata.Length; temporary++)
+						{
+							var newtex = new SkinData.TextureSwitch();
+							newtex.id = originaltexturedata[temporary].id;
+							Plugin.LogInfo("Cloning Texture " + newtex.id);
+							var subtex = new Texture2D[originaltexturedata[temporary].textures.Length];
+							for (var subway = 0; subway < originaltexturedata[temporary].textures.Length; subway++) {
+								subtex[subway] = duplicateTexture(originaltexturedata[temporary].textures[subway]);
+							}
+							newtex.textures = subtex;
+							newtexturedata[temporary] = newtex;
+						}
+						newobjmeshdata = newmeshdata;
+						newobjtexturedata = newtexturedata;
+						Plugin.LogInfo("Texture Data Length:" + newtexturedata.Length);
+						foreach (string text in from x in Directory.GetFiles(path)
 												where x.ToLower().EndsWith(".png")
 												select x)
 						{
-							
+                            path = path.Replace("\\", "/");
+
 							Plugin.LogInfo("Found PNG " + text);
 							string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(text);
 
@@ -174,16 +235,22 @@ namespace NickSkins.Management
 							}
 						}
 
+						loadyskin.skinId = folderName;
+						SkinData.TextureSwitch[] tempskindatatextures = NickSkins.Utils.GetFielder.GetPrivateField<SkinData.TextureSwitch[]>(tempskindata, "textureSwitches");
+						SkinData.MeshSwitch[] tempskindatameshes = NickSkins.Utils.GetFielder.GetPrivateField<SkinData.MeshSwitch[]>(tempskindata, "meshSwitches");
+						tempskindatameshes = newmeshdata;
+						tempskindatatextures = newtexturedata;
+						loadyskin.skin = tempskindata;
 
-						LoadedSkin skintoload = new LoadedSkin
-                        {
-                            skinId = folderName,
-                            skin = tempskindata
-                        };
+						var loadytexs = NickSkins.Utils.GetFielder.GetPrivateField<SkinData.TextureSwitch[]>(loadyskin.skin, "textureSwitches");
+						loadytexs = newtexturedata; //a doublecheck
+						Plugin.LogInfo("new textureswitches should be " + loadytexs.Length);
 
-                        //skintoload.skin = 
-                        ExternalizedSkinManager.Instance.loadedSkins.Add(folderName, skintoload);
-						ExternalizedSkinManager.Instance.sceneList.AddItem(SceneManager.GetSceneByName(toreplace.skins[0].id));
+
+						//skintoload.skin = 
+						ExternalizedSkinManager.Instance.loadedSkins.Add(folderName, loadyskin);
+						ExternalizedSkinManager.Instance.sceneList.Add(toreplace.skins[0].id, SceneManager.GetSceneByName(toreplace.skins[0].id));
+						ExternalizedSkinManager.Instance.sceneList.Add(folderName, scene);
 						Plugin.LogInfo($"Found custom skin: {parentFolderName}\\{folderName}");
 					}
 
