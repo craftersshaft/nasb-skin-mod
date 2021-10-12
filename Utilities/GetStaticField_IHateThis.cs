@@ -40,5 +40,23 @@ namespace NickSkins.Utils
 				return formatter.Deserialize(stream);
 			}
 		}
+
+		public static void SetPrivateField(this object obj, string fieldName, object value, Type targetType)
+		{
+			var prop = targetType.GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+			if (prop == null)
+				throw new InvalidOperationException($"{fieldName} is not a member of {targetType.Name}");
+			prop.SetValue(obj, value);
+		}
+		//thank you steven from nasb discord
+
+		public static T GetFieldValue<T>(this object obj, string name)
+		{
+			// Set the flags so that private and public fields from instances will be found
+			var bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+			var field = obj.GetType().GetField(name, bindingFlags);
+			return (T)field?.GetValue(obj);
+		}
+		public static void SetPrivateField(this object obj, string fieldName, object value) => obj.SetPrivateField(fieldName, value, obj.GetType());
 	}
 }

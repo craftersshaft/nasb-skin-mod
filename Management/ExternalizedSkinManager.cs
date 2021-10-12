@@ -141,8 +141,8 @@ namespace NickSkins.Management
 					SkinData.TextureSwitch[] temtexturedata = NickSkins.Utils.GetFielder.GetPrivateField<SkinData.TextureSwitch[]>(loadyskin.skin, "textureSwitches");
 						if (temtexturedata == null)
                         {
-							temtexturedata = new SkinData.TextureSwitch[25];
-                        }
+							loadyskin.skin.SetPrivateField("textureSwitches", new SkinData.TextureSwitch[25]);
+						}
 
 					SkinData tempskindata = ScriptableObject.CreateInstance<SkinData>();
 					tempskindata.skinid = folderName.Substring(folderName.LastIndexOf("_")+1);
@@ -243,14 +243,28 @@ namespace NickSkins.Management
 						loadyskin.skin = tempskindata;
 
 						var loadytexs = NickSkins.Utils.GetFielder.GetPrivateField<SkinData.TextureSwitch[]>(loadyskin.skin, "textureSwitches");
+
 						loadytexs = newtexturedata; //a doublecheck
+						loadyskin.skin.SetPrivateField("textureSwitches", loadytexs);
+						loadyskin.skin.SetPrivateField("meshSwitches", newmeshdata);
 						Plugin.LogInfo("new textureswitches should be " + loadytexs.Length);
 
-
+						
 						//skintoload.skin = 
 						ExternalizedSkinManager.Instance.loadedSkins.Add(folderName, loadyskin);
 						ExternalizedSkinManager.Instance.sceneList.Add(toreplace.skins[0].id, SceneManager.GetSceneByName(toreplace.skins[0].id));
 						ExternalizedSkinManager.Instance.sceneList.Add(folderName, scene);
+
+						//string dacurrentConfig = GameObject.Find("Agent Loader").GetComponent<Nick.AgentLoading>().idScenes.scenesConfigFile.text + ("\n"+folderName+":"+toreplace.skins[0].id);
+						//TextAsset configFinalized = new TextAsset(dacurrentConfig);
+						//GameObject.Find("Agent Loader").GetComponent<Nick.AgentLoading>().idScenes.scenesConfigFile. = new TextAsset(dacurrentConfig);
+
+						var loadstates = (Dictionary<string, Nick.AgentLoading.LoadState>)AccessTools.Field(typeof(AgentLoading), "loadStates").GetValue(GameObject.Find("Agent Loader").GetComponent<Nick.AgentLoading>());
+						var loadstatus = new AgentLoading.LoadState();
+						loadstatus.phase = AgentLoading.LoadPhase.Loaded;
+						loadstates.Add(folderName, loadstatus);
+						//GameObject.Find("Agent Loader").GetComponent<Nick.AgentLoading>().SetPrivateField("loadStates", loadstates);
+
 						Plugin.LogInfo($"Found custom skin: {parentFolderName}\\{folderName}");
 					}
 

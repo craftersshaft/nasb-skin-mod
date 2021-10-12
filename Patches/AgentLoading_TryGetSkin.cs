@@ -22,9 +22,14 @@ namespace NickSkins.Patches
 				return true;
 			}
 			else {
-				SweetVictoryToo.Plugin.LogError("apparently the scene " + id + " doesn't exist");
+				if (NickSkins.Management.ExternalizedSkinManager.Instance.loadedSkins.ContainsKey(id)) {
+				 skin = NickSkins.Management.ExternalizedSkinManager.Instance.loadedSkins[id].skin;
+					return false;
+				} else {
+				//SweetVictoryToo.Plugin.LogError("apparently the scene " + id + " doesn't exist");
 			id = "skin_apple_default";
-			return 	true;
+			return  true;
+				}
 			}
             
 		}
