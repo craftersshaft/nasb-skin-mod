@@ -236,6 +236,42 @@ namespace NickSkins.Management
 							}
 						}
 
+						foreach (string text in from x in Directory.GetFiles(path)
+												where x.ToLower().EndsWith(".obj")
+												select x)
+						{
+							path = path.Replace("\\", "/");
+
+							Plugin.LogInfo("Found OBJ " + text);
+							string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(text);
+
+							foreach (Nick.SkinData.MeshSwitch meshavery in newmeshdata)
+							{
+								Plugin.LogInfo("Found Mesh " + meshavery.id);
+								string remember = meshavery.id;
+								if (fileNameWithoutExtension.ToLower() == remember.ToLower())
+								{
+									void ObjectToMesh(GameObject octagon)
+									{
+										MeshFilter meshine = GameObject.Instantiate(octagon).GetComponent<MeshFilter>();
+										for (var ayy = 0; ayy < 4; ayy++)
+										{
+											if (meshavery.meshes[ayy] == null) { meshavery.meshes[ayy] = new UnityEngine.Mesh(); }
+											Mesh newmesh = meshine.sharedMesh;
+											meshavery.meshes[ayy] = newmesh;
+											meshavery.meshes[ayy].name = meshavery.id + "_geo";
+										}
+										Plugin.LogInfo("Replaced Mesh " + meshavery.id);
+									}
+									//BrainFailProductions.PolyFewRuntime.ImportOBJFromFileSystem
+									//	text.Replace("\\", "/")
+									BrainFailProductions.PolyFewRuntime.PolyfewRuntime.ImportOBJFromFileSystem(text.Replace("\\", "/"), null, null, ObjectToMesh, null, null);
+
+
+								}
+							}
+						}
+
 						loadyskin.skinId = folderName;
 						SkinData.TextureSwitch[] tempskindatatextures = NickSkins.Utils.GetFielder.GetPrivateField<SkinData.TextureSwitch[]>(tempskindata, "textureSwitches");
 						SkinData.MeshSwitch[] tempskindatameshes = NickSkins.Utils.GetFielder.GetPrivateField<SkinData.MeshSwitch[]>(tempskindata, "meshSwitches");
@@ -244,13 +280,15 @@ namespace NickSkins.Management
 						loadyskin.skin = tempskindata;
 
 						var loadytexs = NickSkins.Utils.GetFielder.GetPrivateField<SkinData.TextureSwitch[]>(loadyskin.skin, "textureSwitches");
-
+						var loadymexs = NickSkins.Utils.GetFielder.GetPrivateField<SkinData.MeshSwitch[]>(loadyskin.skin, "meshSwitches");
+						loadymexs = newmeshdata; //a doubler
 						loadytexs = newtexturedata; //a doublecheck
 						loadyskin.skin.SetPrivateField("textureSwitches", loadytexs);
-						loadyskin.skin.SetPrivateField("meshSwitches", newmeshdata);
+						loadyskin.skin.SetPrivateField("meshSwitches", loadymexs);
 						Plugin.LogInfo("new textureswitches should be " + loadytexs.Length);
+						Plugin.LogInfo("new meshswitches should be " + loadymexs.Length);
 
-						
+
 						//skintoload.skin = 
 						ExternalizedSkinManager.Instance.loadedSkins.Add(folderName, loadyskin);
 						ExternalizedSkinManager.Instance.sceneList.Add(toreplace.skins[0].id, SceneManager.GetSceneByName(toreplace.skins[0].id));
