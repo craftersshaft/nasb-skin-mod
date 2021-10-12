@@ -177,6 +177,7 @@ namespace NickSkins.Management
 							Texture2D readableText = new Texture2D(source.width, source.height);
 							readableText.ReadPixels(new Rect(0, 0, renderTex.width, renderTex.height), 0, 0);
 							readableText.Apply();
+							readableText.name = source.name;
 							RenderTexture.active = previous;
 							RenderTexture.ReleaseTemporary(renderTex);
 							return readableText;
@@ -255,13 +256,14 @@ namespace NickSkins.Management
 						ExternalizedSkinManager.Instance.sceneList.Add(toreplace.skins[0].id, SceneManager.GetSceneByName(toreplace.skins[0].id));
 						ExternalizedSkinManager.Instance.sceneList.Add(folderName, scene);
 
-						//string dacurrentConfig = GameObject.Find("Agent Loader").GetComponent<Nick.AgentLoading>().idScenes.scenesConfigFile.text + ("\n"+folderName+":"+toreplace.skins[0].id);
-						//TextAsset configFinalized = new TextAsset(dacurrentConfig);
-						//GameObject.Find("Agent Loader").GetComponent<Nick.AgentLoading>().idScenes.scenesConfigFile. = new TextAsset(dacurrentConfig);
+						string dacurrentConfig = GameObject.Find("Agent Loader").GetComponent<Nick.AgentLoading>().idScenes.scenesConfigFile.text + (folderName+":"+toreplace.skins[0].id+ "\n");
+						TextAsset configFinalized = new TextAsset(dacurrentConfig);
+						GameObject.Find("Agent Loader").GetComponent<Nick.AgentLoading>().idScenes.scenesConfigFile = new TextAsset(dacurrentConfig);
+						GameObject.Find("Agent Loader").GetComponent<Nick.AgentLoading>().idScenes.IdDict.Add(folderName, toreplace.skins[0].id);
 
 						var loadstates = (Dictionary<string, Nick.AgentLoading.LoadState>)AccessTools.Field(typeof(AgentLoading), "loadStates").GetValue(GameObject.Find("Agent Loader").GetComponent<Nick.AgentLoading>());
 						var loadstatus = new AgentLoading.LoadState();
-						loadstatus.phase = AgentLoading.LoadPhase.Loaded;
+						//loadstatus.phase = AgentLoading.LoadPhase.Loaded;
 						loadstates.Add(folderName, loadstatus);
 						//GameObject.Find("Agent Loader").GetComponent<Nick.AgentLoading>().SetPrivateField("loadStates", loadstates);
 
