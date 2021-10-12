@@ -120,10 +120,10 @@ namespace NickSkins.Management
 
 				void OnSceneLoaded(Scene scene, LoadSceneMode mode)
 				{
-					if (scene.IsValid() && scene.name != "MenuScene")
+					if (scene.IsValid() && scene.name != "MenuScene" && !Instance.sceneList.ContainsKey(scene.name))
 					{
 						Plugin.LogInfo("Loaded scene " + scene.name);
-						GameObject newObject = new GameObject("loadedCustomSkin");
+						GameObject newObject = new GameObject("loadedCustomSkin"+folderName);
 						Nick.LoadedSkin loadyskin = newObject.AddComponent<Nick.LoadedSkin>() as Nick.LoadedSkin;
 						loadyskin.skinId = folderName;
 						loadyskin.skin = ScriptableObject.CreateInstance<SkinData>();

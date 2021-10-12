@@ -21,10 +21,10 @@ namespace NickSkins.Patches
 			{
                 if (!UnityEngine.Application.CanStreamedLevelBeLoaded(chmd.skins[i].id))
                 {
-					//if (!SweetVictoryToo.Plugin.Instance.skinmin.loadedSkins.ContainsKey(chmd.skins[i].id)) {
+					if (!SweetVictoryToo.Plugin.Instance.skinmin.loadedSkins.ContainsKey(chmd.skins[i].id)) {
 						SweetVictoryToo.Plugin.LogError("apparently the scene " + chmd.skins[i].id + " doesn't exist");
-						//chmd.skins[i] = chmd.skins[0];
-					//}
+						chmd.skins[i] = chmd.skins[0];
+					}
 				}
 			}
 		}
