@@ -323,6 +323,10 @@ namespace NickSkins.Management
 											void ObjectToMesh(GameObject octagon)
 											{
 												MeshFilter meshine = octagon.transform.GetChild(0).GetComponent<MeshFilter>();
+												if (octagon.transform.GetChild(0).GetComponent<MeshFilter>() == null)
+                                                {
+													meshine = octagon.transform.GetChild(0).GetChild(0).GetComponent<MeshFilter>();
+												}
 												for (var ayy = 0; ayy < 4; ayy++)
 												{
 													if (meshavery.meshes[ayy] == null) { meshavery.meshes[ayy] = new UnityEngine.Mesh(); }
