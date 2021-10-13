@@ -322,6 +322,7 @@ namespace NickSkins.Management
 										{
 											void ObjectToMesh(GameObject octagon)
 											{
+												octagon.SetActive(false);
 												MeshFilter meshine = octagon.transform.GetChild(0).GetComponent<MeshFilter>();
 												if (octagon.transform.GetChild(0).GetComponent<MeshFilter>() == null)
                                                 {
@@ -335,7 +336,6 @@ namespace NickSkins.Management
 													meshavery.meshes[ayy].name = meshavery.id + "_geo";
 												}
 												Plugin.LogInfo("Replaced Mesh " + meshavery.id);
-												octagon.SetActive(false);
 											}
 											//BrainFailProductions.PolyFewRuntime.ImportOBJFromFileSystem
 											//	text.Replace("\\", "/")
