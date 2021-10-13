@@ -314,27 +314,29 @@ namespace NickSkins.Management
 
 								foreach (Nick.SkinData.MeshSwitch meshavery in newmeshdata)
 								{
-									Plugin.LogInfo("Found Mesh " + meshavery.id);
-									string remember = meshavery.id;
-									if (fileNameWithoutExtension.ToLower() == remember.ToLower())
+									if (meshavery.id != null)
 									{
-										void ObjectToMesh(GameObject octagon)
+										Plugin.LogInfo("Found Mesh " + meshavery.id);
+										string remember = meshavery.id;
+										if (fileNameWithoutExtension.ToLower() == remember.ToLower())
 										{
-											MeshFilter meshine = GameObject.Instantiate(octagon).GetComponent<MeshFilter>();
-											for (var ayy = 0; ayy < 4; ayy++)
+											void ObjectToMesh(GameObject octagon)
 											{
-												if (meshavery.meshes[ayy] == null) { meshavery.meshes[ayy] = new UnityEngine.Mesh(); }
-												Mesh newmesh = meshine.sharedMesh;
-												meshavery.meshes[ayy] = newmesh;
-												meshavery.meshes[ayy].name = meshavery.id + "_geo";
+												MeshFilter meshine = octagon.transform.GetChild(0).GetComponent<MeshFilter>();
+												for (var ayy = 0; ayy < 4; ayy++)
+												{
+													if (meshavery.meshes[ayy] == null) { meshavery.meshes[ayy] = new UnityEngine.Mesh(); }
+													Mesh newmesh = meshine.sharedMesh;
+													meshavery.meshes[ayy] = newmesh;
+													meshavery.meshes[ayy].name = meshavery.id + "_geo";
+												}
+												Plugin.LogInfo("Replaced Mesh " + meshavery.id);
+												octagon.SetActive(false);
 											}
-											Plugin.LogInfo("Replaced Mesh " + meshavery.id);
+											//BrainFailProductions.PolyFewRuntime.ImportOBJFromFileSystem
+											//	text.Replace("\\", "/")
+											BrainFailProductions.PolyFewRuntime.PolyfewRuntime.ImportOBJFromFileSystem(text.Replace("\\", "/"), null, null, ObjectToMesh, null, null);
 										}
-										//BrainFailProductions.PolyFewRuntime.ImportOBJFromFileSystem
-										//	text.Replace("\\", "/")
-										BrainFailProductions.PolyFewRuntime.PolyfewRuntime.ImportOBJFromFileSystem(text.Replace("\\", "/"), null, null, ObjectToMesh, null, null);
-
-
 									}
 								}
 							}
