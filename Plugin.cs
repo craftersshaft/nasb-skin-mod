@@ -12,7 +12,7 @@ using Photon.Pun;
 
 namespace SweetVictoryToo
 {
-    [BepInPlugin("craftersshaft.nasbmods.nasbskins", "NASB Skins", "0.0.5")]
+    [BepInPlugin("craftersshaft.nasbmods.nasbskins", "NASB Skins", "0.0.7")]
     public class Plugin : BaseUnityPlugin
     {
         internal static Plugin Instance;
