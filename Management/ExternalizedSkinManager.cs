@@ -51,11 +51,11 @@ namespace NickSkins.Management
 					Plugin.LogInfo("gonna load up some " + metaknight.id);
 					Directory.CreateDirectory(Path.Combine(rootCustomSkinsPath, metaknight.id));
 				}
-			for (var eye = 0; eye < UnityEngine.Resources.FindObjectsOfTypeAll(typeof(Nick.CharacterMetaData)).Length; eye++)
-                {
-					LoadFromSubDirectories(charactersingeneral[eye].id);
+				for (var eye = 0; eye < UnityEngine.Resources.FindObjectsOfTypeAll(typeof(Nick.CharacterMetaData)).Length; eye++)
+				{
+						LoadFromSubDirectories(charactersingeneral[eye].id);
 				}
-			}
+		}
 			);
 		}
 
@@ -118,28 +118,48 @@ namespace NickSkins.Management
 				skinmeta.id = folderName;
 				GetCharacterById(parentFolderName).skins = toreplace.skins.AddToArray(skinmeta); // end of skin replacing metadata
 
+				if (SceneManager.GetSceneByName(toreplace.skins[0].id).isLoaded == false) {
+					//SceneManager.LoadSceneAsync(toreplace.id, LoadSceneMode.Additive);
+					SceneManager.LoadSceneAsync(toreplace.skins[0].id, LoadSceneMode.Additive);
 
-				SceneManager.LoadScene(toreplace.skins[0].id, LoadSceneMode.Additive);
+				} else
+                {
+					OnSceneLoaded(SceneManager.GetSceneByName(toreplace.skins[0].id), LoadSceneMode.Additive);
+
+				}
+
 				SceneManager.sceneLoaded += OnSceneLoaded;
 
 				void OnSceneLoaded(Scene scene, LoadSceneMode mode)
 				{
 					if (scene.IsValid() && scene.name != "MenuScene" && !Instance.sceneList.ContainsKey(scene.name))
 					{
-						GameAgentSkins tempskinbase;
 						Plugin.LogInfo("Loaded scene " + scene.name);
+						//ExternalizedSkinManager.Instance.sceneList.Add(scene.name, scene);
 						if (scene.name.StartsWith("char_"))
 						{
-							scene.GetRootGameObjects()[0].GetComponent<LoadedAgent>().agentPrefab.TryGetSkins(out tempskinbase);
-							if (tempskinbase != null) {
-								Instance.defaultSwitches.Add(parentFolderName, tempskinbase);
-									}
-							SceneManager.UnloadSceneAsync(parentFolderName);
 
+							//ExternalizedSkinManager.Instance.sceneList.Add(scene.name, scene);
+							//if (GameObject.Find(scene.name) != null) {
+							//	if (GameObject.Find(scene.name).GetComponent<GameAgentSkins>() != null) {
+							//		Instance.defaultSwitches.Add(parentFolderName, GameObject.Find(scene.name).GetComponent<GameAgentSkins>());
+							//	}
+							//}
+							//Plugin.LogInfo("im going to kill the scene "+scene.name);
+							//SceneManager.UnloadSceneAsync(parentFolderName);
+							//for (var trash = 0; trash < scene.GetRootGameObjects().Length; trash++) { UnityEngine.Object.DestroyImmediate(scene.GetRootGameObjects()[trash]); }
+							//Why. Why. Why. Every single double check i do for making sure there's objects left and to kill them keeps them alive.
+							//Does my own code not hear me loud and clear? Remove the character when you're done with them.
+							
+							//GameObject.Destroy(GameObject.Find(scene.name));
 						}
 						else
 						{
-
+							ExternalizedSkinManager.Instance.sceneList.Add(folderName, scene);
+							string dacurrentConfig = GameObject.Find("Agent Loader").GetComponent<Nick.AgentLoading>().idScenes.scenesConfigFile.text + (folderName + ":" + toreplace.skins[0].id + "\n");
+							TextAsset configFinalized = new TextAsset(dacurrentConfig);
+							GameObject.Find("Agent Loader").GetComponent<Nick.AgentLoading>().idScenes.scenesConfigFile = new TextAsset(dacurrentConfig);
+							GameObject.Find("Agent Loader").GetComponent<Nick.AgentLoading>().idScenes.IdDict.Add(folderName, toreplace.skins[0].id);
 							GameObject newObject = new GameObject("loadedCustomSkin" + folderName);
 							Nick.LoadedSkin loadyskin = newObject.AddComponent<Nick.LoadedSkin>() as Nick.LoadedSkin;
 							loadyskin.skinId = folderName;
@@ -364,13 +384,10 @@ namespace NickSkins.Management
 
 							//skintoload.skin = 
 							ExternalizedSkinManager.Instance.loadedSkins.Add(folderName, loadyskin);
-							ExternalizedSkinManager.Instance.sceneList.Add(toreplace.skins[0].id, SceneManager.GetSceneByName(toreplace.skins[0].id));
-							ExternalizedSkinManager.Instance.sceneList.Add(folderName, scene);
+							if (!ExternalizedSkinManager.Instance.sceneList.ContainsKey(toreplace.skins[0].id)) {
+								ExternalizedSkinManager.Instance.sceneList.Add(toreplace.skins[0].id, SceneManager.GetSceneByName(toreplace.skins[0].id));
+							}
 
-							string dacurrentConfig = GameObject.Find("Agent Loader").GetComponent<Nick.AgentLoading>().idScenes.scenesConfigFile.text + (folderName + ":" + toreplace.skins[0].id + "\n");
-							TextAsset configFinalized = new TextAsset(dacurrentConfig);
-							GameObject.Find("Agent Loader").GetComponent<Nick.AgentLoading>().idScenes.scenesConfigFile = new TextAsset(dacurrentConfig);
-							GameObject.Find("Agent Loader").GetComponent<Nick.AgentLoading>().idScenes.IdDict.Add(folderName, toreplace.skins[0].id);
 
 							var loadstates = (Dictionary<string, Nick.AgentLoading.LoadState>)AccessTools.Field(typeof(AgentLoading), "loadStates").GetValue(GameObject.Find("Agent Loader").GetComponent<Nick.AgentLoading>());
 							var loadstatus = new AgentLoading.LoadState();
@@ -380,13 +397,14 @@ namespace NickSkins.Management
 
 							Plugin.LogInfo($"Found custom skin: {parentFolderName}\\{folderName}");
 							yourSkins.Add(folderName);
-							SceneManager.UnloadSceneAsync(scene);
+							//SceneManager.UnloadSceneAsync(scene);
+							for (var trash = 0; trash < scene.GetRootGameObjects().Length; trash++) { UnityEngine.Object.DestroyImmediate(scene.GetRootGameObjects()[trash]); }
 						}
 					}
 
 					else
 					{
-						Plugin.LogInfo("the scene didnt load in time :( ");
+						Plugin.LogInfo("the scene "+ scene.name + " wasnt what we were looking for");
 
 					}
 				}

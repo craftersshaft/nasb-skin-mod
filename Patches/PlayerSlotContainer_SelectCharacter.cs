@@ -15,7 +15,7 @@ namespace NickSkins.Patches
 	class PlayerSlotContainer_SelectCharacter
 	{
 
-		static void Prefix(PlayerSlotContainer __instance, ref CharacterMetaData chmd)
+		static void Prefix(PlayerSlotContainer __instance, ref CharacterMetaData chmd, ref MenuTextContent ___playerTagText)
 		{
 			for (int i = 0; i < chmd.skins.Length; i++)
 			{
@@ -27,6 +27,7 @@ namespace NickSkins.Patches
 					}
 				}
 			}
+			___playerTagText.SetString(Localization.abbr_player + (__instance.playerSlotIndex + 1).ToString() + "\nSkin: " + (__instance.PlayerSetup.skin + 1).ToString());
 		}
 	}
 }
